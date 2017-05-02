@@ -21,8 +21,6 @@
 local BookwormButton = {};
 TRP3_API.bookworm.button = BookwormButton;
 
-Bookworm.Button = {};
-
 function BookwormButton.init()
 
 	local button = TRP3_BookwormButton;

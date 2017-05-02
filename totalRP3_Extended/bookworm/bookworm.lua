@@ -55,7 +55,7 @@ local function init()
 	local TRP3_DB = TRP3_DB;
 	local ITEM_TEXT_FROM = ITEM_TEXT_FROM;
 
-	local TRP3_API       = {
+	local TRP3       = {
 		generateID           = TRP3_API.utils.str.id,
 		getDocumentItemData  = TRP3_API.extended.tools.getDocumentItemData,
 		createItem           = TRP3_API.extended.tools.createItem,
@@ -74,7 +74,7 @@ local function init()
 	}
 
 	---@type BookwormButton
-	local BookwormButton = TRP3_API.bookworm.BookwormButton;
+	local BookwormButton = TRP3_API.bookworm.button;
 	---@type ItemTextReader
 	local ItemTextReader = TRP3_API.bookworm.ItemTextReader;
 
@@ -102,7 +102,12 @@ local function init()
 
 
 
+
 {h1:c}{col:3f0100}%s{/col}{/h1}
+
+
+
+
 {img:Interface\QUESTFRAME\UI-HorizontalBreak:256:64}
 ]]
 	local NORMAL_PAGE_TEMPLATE = [[{img:Interface\QUESTFRAME\UI-HorizontalBreak:256:64}
@@ -129,7 +134,7 @@ local function init()
 	end
 
 
-	TRP3_API.registerHandler("ITEM_TEXT_READY", function()
+	TRP3.registerHandler("ITEM_TEXT_READY", function()
 		BookwormButton:Show();
 		local itemIcon = ItemTextReader.getItemIcon() or "Interface\\ICONS\\" .. getIconForMaterial(ItemTextReader.getMaterial());
 		BookwormButton:SetIcon(itemIcon);
@@ -137,7 +142,7 @@ local function init()
 			BookwormButton:ShowCheckmark();
 		end
 	end);
-	TRP3_API.registerHandler("ITEM_TEXT_CLOSED", function()
+	TRP3.registerHandler("ITEM_TEXT_CLOSED", function()
 		BookwormButton:Hide();
 	end);
 
@@ -147,70 +152,87 @@ local function init()
 			itemID = fetchExistingDocument(ItemTextReader.getItem());
 			logValue("Item already exists, adding to the inventory item", itemID);
 		else
+			local item;
+			local id = TRP3.generateID();
+			itemID, item =  TRP3.createItem(TRP3.getDocumentItemData(id), id);
 
-			local newItemID, item = TRP3_API.createItem(TRP3_API.getBlankItemData());
-			itemID = newItemID;
-			logValue("Created new item", itemID);
+			-- Add opening sound on use
+			item.SC.onUse.ST["2"] = {
+				["e"] = {
+					{
+						["id"] = "sound_id_self",
+						["args"] = {
+							"SFX",
+							831,
+						},
+					},
+				},
+				["t"] = "list",
+			};
+			item.SC.onUse.ST["1"].n = "2";
 
-			-- Decorate item
 			item.BA.NA = ItemTextReader.getItem();
 			if ItemTextReader.hasAuthor() then
 				item.BA.LE = ITEM_TEXT_FROM .. " " .. ItemTextReader.getAuthor();
 			end
+			item.BA.IC = getIconForMaterial(ItemTextReader.getMaterial()); -- Bookworm.book.getItemIcon() or
 
-			--TODO Make TRP3: Extended accept texture IDs so we can use the actual items icon
-			item.BA.IC = getIconForMaterial(ItemTextReader.getMaterial());
+			local content = item.IN.doc;
+			content.PA = {};
 
-			local pages = {};
+
 			local currentPageNumber = ItemTextReader.getPageNumber();
 
+			local title = item.BA.NA;
+
+			if item.BA.LE then
+				title = title ..",\n" .. item.BA.LE;
+			end
+
 			ItemTextReader.goToFirstPage();
-			tinsert(pages, ItemTextReader.getText());
-			while (ItemTextReader.hasNextPage()) do
+
+			if ItemTextReader.currentPageIsHTML() then
+				tinsert(content.PA, {
+					TX = TITLE_PAGE_TEMPLATE:format(ItemTextReader.getItem())
+				});
+				tinsert(content.PA, {
+					TX = ItemTextReader.getText(),
+					HTML = true
+				});
+			else
+				if ItemTextReader.getNumberOfPages() > 1 then
+					tinsert(content.PA, {
+						TX = TITLE_PAGE_TEMPLATE:format(ItemTextReader.getItem())
+					});
+					tinsert(content.PA, {
+						TX = NORMAL_PAGE_TEMPLATE .. ItemTextReader.getText()
+					})
+				else
+					tinsert(content.PA, {
+						TX = TITLED_PAGE_TEMPLATE:format(title) .. ItemTextReader.getText();
+					})
+				end
+			end
+			while(ItemTextReader.hasNextPage()) do
 				ItemTextReader.nextPage();
-				tinsert(pages, ItemTextReader.getText());
+				if ItemTextReader.currentPageIsHTML() then
+					tinsert(content.PA, {
+						TX = ItemTextReader.getText(),
+						HTML = true
+					});
+				else
+					tinsert(content.PA, {
+						TX = NORMAL_PAGE_TEMPLATE .. ItemTextReader.getText()
+					})
+				end
 			end
 			ItemTextReader.goToPage(currentPageNumber);
-
-			-- Add opening sound on use
-			item.SC = {
-				onUse = {
-					ST = {
-						["1"] = {
-							["e"] = {
-								{
-									["id"]   = "sound_id_self",
-									["args"] = {
-										"SFX",
-										831,
-									},
-								},
-							},
-							["t"] = "list",
-							["n"] = "2"
-						},
-						["2"] = {
-							["e"] = {
-								{
-									["id"]   = "document_show_html",
-									["args"] = {
-										name   = ItemTextReader.getItem(),
-										author = ItemTextReader.getAuthor(),
-										pages  = pages
-									},
-								},
-							},
-							["t"] = "list",
-						}
-					}
-				}
-			};
 		end
 
-		TRP3_API.addItem(nil, itemID, { count = 1 });
-		TRP3_API.playSound(1184);
+		TRP3.addItem(nil, itemID, { count = 1 });
+		TRP3.playSound(1184);
 
-		TRP3_API.fireEvent(TRP3_API.ON_OBJECT_UPDATED);
+		TRP3.fireEvent(TRP3.ON_OBJECT_UPDATED);
 
 		return true
 	end

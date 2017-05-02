@@ -42,6 +42,11 @@ local function setFrameHTML(html)
 	HTMLFrame:SetText(HTMLFrame.html);
 end
 
+local function setFrameRawHTML(html)
+	HTMLFrame.html = html;
+	HTMLFrame:SetText(HTMLFrame.html);
+end
+
 --*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 -- Document API
 --*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
@@ -67,7 +72,12 @@ local function loadPage(page)
 
 	local text = TRP3_API.script.parseArgs(pages[page] and pages[page].TX or "", documentFrame.parentArgs);
 
-	setFrameHTML(text);
+	if pages[page].HTML then
+		setFrameRawHTML(text);
+	else
+		setFrameHTML(text);
+	end
+
 	documentFrame.current = page;
 end
 

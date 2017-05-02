@@ -57,8 +57,8 @@
 		</Layers>
 	</Button>
 
+	<Script file="bookworm.lua" />
 	<Script file="button.lua" />
 	<Script file="itemTextReader.lua" />
-	<Script file="bookworm.lua" />
 
 </Ui>

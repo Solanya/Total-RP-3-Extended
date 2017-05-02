@@ -46,5 +46,6 @@
 	<Include file="quest\quest.xml"/>
 	<Include file="document\document.xml"/>
 	<Include file="dialogues\dialogues.xml"/>
+	<Include file="bookworm\bookworm.xml"/>
 
 </Ui>
