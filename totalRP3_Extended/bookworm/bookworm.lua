@@ -21,32 +21,6 @@
 local Bookworm = {};
 TRP3_API.bookworm = Bookworm;
 
-local function log(...)
-	if not TRP3_DEBUG then
-		return
-	end;
-	local tab = 1
-	for i = 1, 10 do
-		if GetChatWindowInfo(i) == "Logs" then
-			tab = i
-			break
-		end
-	end
-	_G["ChatFrame" .. tab]:AddMessage("|cffaaaaaa[Total RP 3: Bookworm]|r " .. strjoin(" ", tostringall(...)));
-end;
-
-local function logEvent(event, ...)
-	log(("|cff62D96B[EVENT FIRED : %s]|r"):format(event), ...);
-end
-
-local function logValue(valueName, ...)
-	log(("|cff669EFF[%s]|r = "):format(valueName), ...);
-end
-local function logTexture(valueName, texture, ...)
-	log(("|cff669EFF[%s]|r = "):format(valueName), ("\124T%s:20:20\124t"):format(texture or ""), ...);
-end
-
-
 local function init()
 
 	local tinsert = tinsert;
@@ -77,6 +51,9 @@ local function init()
 	local BookwormButton = TRP3_API.bookworm.button;
 	---@type ItemTextReader
 	local ItemTextReader = TRP3_API.bookworm.ItemTextReader;
+
+	local ITEM_ADDED_TO_INVENTORY_SOUND = 1184;
+	local ITEM_ON_USE_SOUND = 831;
 
 	-- Default icons to use when the document is not from an item
 	local DEFAULT_ICONS        = {
@@ -150,11 +127,13 @@ local function init()
 		local itemID;
 		if documentAlreadyExists(ItemTextReader.getItem()) then
 			itemID = fetchExistingDocument(ItemTextReader.getItem());
-			logValue("Item already exists, adding to the inventory item", itemID);
 		else
 			local item;
 			local id = TRP3.generateID();
 			itemID, item =  TRP3.createItem(TRP3.getDocumentItemData(id), id);
+
+			local bookTitle = ItemTextReader.getItem();
+			local bookAuthor = ItemTextReader.getAuthor();
 
 			-- Add opening sound on use
 			item.SC.onUse.ST["2"] = {
@@ -163,30 +142,30 @@ local function init()
 						["id"] = "sound_id_self",
 						["args"] = {
 							"SFX",
-							831,
+							ITEM_ON_USE_SOUND,
 						},
 					},
 				},
 				["t"] = "list",
 			};
+			-- Indicate in effect 1 that the next effect is effect 2
 			item.SC.onUse.ST["1"].n = "2";
 
-			item.BA.NA = ItemTextReader.getItem();
-			if ItemTextReader.hasAuthor() then
-				item.BA.LE = ITEM_TEXT_FROM .. " " .. ItemTextReader.getAuthor();
+			item.BA.NA = bookTitle;
+			if bookAuthor then
+				item.BA.LE = ITEM_TEXT_FROM .. " " .. bookAuthor;
 			end
-			item.BA.IC = getIconForMaterial(ItemTextReader.getMaterial()); -- Bookworm.book.getItemIcon() or
+
+			-- Use the icon of the item or the default icon for the material of the book
+			item.BA.IC = ItemTextReader.getItemIcon() or getIconForMaterial(ItemTextReader.getMaterial());
 
 			local content = item.IN.doc;
 			content.PA = {};
 
-
 			local currentPageNumber = ItemTextReader.getPageNumber();
 
-			local title = item.BA.NA;
-
-			if item.BA.LE then
-				title = title ..",\n" .. item.BA.LE;
+			if bookAuthor then
+				bookTitle = bookTitle ..",\n" .. ITEM_TEXT_FROM .. " " .. bookAuthor;
 			end
 
 			ItemTextReader.goToFirstPage();
@@ -209,7 +188,7 @@ local function init()
 					})
 				else
 					tinsert(content.PA, {
-						TX = TITLED_PAGE_TEMPLATE:format(title) .. ItemTextReader.getText();
+						TX = TITLED_PAGE_TEMPLATE:format(bookTitle) .. ItemTextReader.getText();
 					})
 				end
 			end
@@ -230,11 +209,9 @@ local function init()
 		end
 
 		TRP3.addItem(nil, itemID, { count = 1 });
-		TRP3.playSound(1184);
+		TRP3.playSound(ITEM_ADDED_TO_INVENTORY_SOUND);
 
 		TRP3.fireEvent(TRP3.ON_OBJECT_UPDATED);
-
-		return true
 	end
 
 	BookwormButton.init();
