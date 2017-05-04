@@ -26,6 +26,7 @@ local loc = TRP3_API.locale.getText;
 local getItemLink = TRP3_API.inventory.getItemLink;
 local setTooltipForSameFrame = TRP3_API.ui.tooltip.setTooltipForSameFrame;
 local broadcast = TRP3_API.communication.broadcast;
+local resolveIcon = TRP3_API.utils.str.resolveIcon;
 
 local dropFrame, stashEditFrame, stashFoundFrame = TRP3_DropSearchFrame, TRP3_StashEditFrame, TRP3_StashFoundFrame;
 local callForStashRefresh;
@@ -278,7 +279,7 @@ local stashContainer;
 local createRefreshOnFrame = TRP3_API.ui.frame.createRefreshOnFrame;
 
 local iconHandler = function(icon)
-	stashEditFrame.icon.Icon:SetTexture("Interface\\ICONS\\" .. icon);
+	stashEditFrame.icon.Icon:SetTexture(resolveIcon(icon));
 	stashEditFrame.icon.selectedIcon = icon;
 end
 
@@ -339,7 +340,7 @@ end
 
 function showStash(stashInfo, stashIndex, sharedData)
 	if stashInfo then
-		Utils.texture.applyRoundTexture(stashContainer.Icon, "Interface\\ICONS\\" .. (stashInfo.BA.IC or "TEMP"), "Interface\\ICONS\\TEMP");
+		Utils.texture.applyRoundTexture(stashContainer.Icon, resolveIcon(stashInfo.BA.IC or "TEMP"), "Interface\\ICONS\\TEMP");
 		stashContainer.Title:SetText((stashInfo.BA.NA or loc("DR_STASHES_NAME")));
 
 		if not sharedData or not stashContainer.sync then

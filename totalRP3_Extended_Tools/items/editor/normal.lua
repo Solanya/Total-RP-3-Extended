@@ -25,6 +25,7 @@ local stEtN = Utils.str.emptyToNil;
 local loc = TRP3_API.locale.getText;
 local setTooltipForSameFrame, setTooltipAll = TRP3_API.ui.tooltip.setTooltipForSameFrame, TRP3_API.ui.tooltip.setTooltipAll;
 local toolFrame, currentTab, display, gameplay, notes, container, tabGroup, linksStructure;
+local resolveIcon = TRP3_API.utils.str.resolveIcon;
 
 local TABS = {
 	MAIN = 1,
@@ -41,7 +42,7 @@ local TUTORIAL, CONTAINER_TUTORIAL;
 --*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 local function onIconSelected(icon)
-	display.preview.Icon:SetTexture("Interface\\ICONS\\" .. (icon or "TEMP"));
+	display.preview.Icon:SetTexture(resolveIcon(icon or "TEMP"));
 	display.preview.selectedIcon = icon;
 end
 

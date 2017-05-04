@@ -26,6 +26,7 @@ local stEtN = Utils.str.emptyToNil;
 local loc = TRP3_API.locale.getText;
 local setTooltipForSameFrame = TRP3_API.ui.tooltip.setTooltipForSameFrame;
 local registerEffectEditor = TRP3_API.extended.tools.registerEffectEditor;
+local resolveIcon = TRP3_API.utils.str.resolveIcon;
 
 local inventorySources, inventorySourcesLocals;
 
@@ -386,8 +387,8 @@ local function inv_loot_init()
 	-- Icon
 	setTooltipForSameFrame(editor.icon, "RIGHT", 0, 5, loc("EDITOR_ICON"));
 	local iconHandler = function(icon)
-		editor.icon.Icon:SetTexture("Interface\\ICONS\\" .. icon);
-		editor.bag.Icon:SetTexture("Interface\\ICONS\\" .. icon);
+		editor.icon.Icon:SetTexture(resolveIcon(icon));
+		editor.bag.Icon:SetTexture(resolveIcon(icon));
 		editor.icon.selectedIcon = icon;
 	end
 	editor.icon:SetScript("OnClick", function()

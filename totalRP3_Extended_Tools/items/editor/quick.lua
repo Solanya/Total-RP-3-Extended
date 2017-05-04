@@ -26,6 +26,7 @@ local loc = TRP3_API.locale.getText;
 local setTooltipForSameFrame = TRP3_API.ui.tooltip.setTooltipForSameFrame;
 local editor, toolFrame = TRP3_ItemQuickEditor;
 local onCreatedCallback;
+local resolveIcon = TRP3_API.utils.str.resolveIcon;
 
 --*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 -- Item quick editor
@@ -79,7 +80,7 @@ local function onConvert()
 end
 
 local function onIconSelected(icon)
-	editor.preview.Icon:SetTexture("Interface\\ICONS\\" .. (icon or "TEMP"));
+	editor.preview.Icon:SetTexture(resolveIcon(icon or "TEMP"));
 	editor.preview.selectedIcon = icon;
 end
 

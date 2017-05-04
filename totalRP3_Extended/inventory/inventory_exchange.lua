@@ -30,6 +30,7 @@ local setTooltipForSameFrame = TRP3_API.ui.tooltip.setTooltipForSameFrame;
 local SECURITY_LEVEL = TRP3_API.security.SECURITY_LEVEL;
 local exchangeFrame = TRP3_ExchangeFrame;
 local sendCurrentState, sendAcceptExchange, sendCancel, sendItemDataRequest;
+local resolveIcon = TRP3_API.utils.str.resolveIcon;
 
 local UPDATE_EXCHANGE_QUERY_PREFIX = "IEUE";
 local CANCEL_EXCHANGE_QUERY_PREFIX = "IECE";
@@ -119,7 +120,7 @@ local function decorateSlot(slot, slotData, count, class)
 		slot.name:SetText(slotData.n or UNKNOWN);
 	end
 
-	slot.Icon:SetTexture("Interface\\ICONS\\" .. (class.BA.IC or slotData.i or "temp"));
+	slot.Icon:SetTexture(resolveIcon(class.BA.IC or slotData.i or "temp"));
 	if count > 1 then
 		slot.Quantity:Show();
 		slot.Quantity:SetText(count);

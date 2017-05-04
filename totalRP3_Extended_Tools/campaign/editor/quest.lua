@@ -26,6 +26,7 @@ local setTooltipForSameFrame = TRP3_API.ui.tooltip.setTooltipForSameFrame;
 local setTooltipAll = TRP3_API.ui.tooltip.setTooltipAll;
 local color = Utils.str.color;
 local toolFrame, main, notes, objectives, steps;
+local resolveIcon = TRP3_API.utils.str.resolveIcon;
 
 local TABS = {
 	MAIN = 1,
@@ -44,7 +45,7 @@ local actionEditor = TRP3_ActionsEditorFrame;
 --*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 local function onIconSelected(icon)
-	main.preview.Icon:SetTexture("Interface\\ICONS\\" .. (icon or "TEMP"));
+	main.preview.Icon:SetTexture(resolveIcon(icon or "TEMP"));
 	main.preview.selectedIcon = icon;
 end
 

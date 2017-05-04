@@ -26,6 +26,7 @@ local setTooltipForSameFrame = TRP3_API.ui.tooltip.setTooltipForSameFrame;
 local setTooltipAll = TRP3_API.ui.tooltip.setTooltipAll;
 local color = Utils.str.color;
 local toolFrame, main, pages, params, manager, notes, npc, quests;
+local resolveIcon = TRP3_API.utils.str.resolveIcon;
 
 local TABS = {
 	MAIN = 1,
@@ -47,7 +48,7 @@ local innerEditor = TRP3_InnerObjectEditor;
 --*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 local function onIconSelected(icon)
-	main.vignette.Icon:SetTexture("Interface\\ICONS\\" .. (icon or "TEMP"));
+	main.vignette.Icon:SetTexture(resolveIcon(icon or "TEMP"));
 	main.vignette.selectedIcon = icon;
 end
 

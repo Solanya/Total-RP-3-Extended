@@ -27,6 +27,7 @@ local getQualityColorRGB, getQualityColorText = TRP3_API.inventory.getQualityCol
 local EMPTY = TRP3_API.globals.empty;
 local color = Utils.str.color;
 local getItemLink = TRP3_API.inventory.getItemLink;
+local resolveIcon = TRP3_API.utils.str.resolveIcon;
 
 --*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 -- Slot management
@@ -247,7 +248,7 @@ local function containerSlotUpdate(self, elapsed)
 		local class = self.class;
 		local icon, name = getBaseClassDataSafe(class);
 		self.Icon:Show();
-		self.Icon:SetTexture("Interface\\ICONS\\" .. icon);
+		self.Icon:SetTexture(resolveIcon(icon));
 		if class.BA and class.BA.QE then
 			self.Quest:Show();
 		end
@@ -311,7 +312,7 @@ end
 local function slotOnDragStart(self)
 	if self.info and not TRP3_API.inventory.isInTransaction(self.info) then
 		StackSplitFrame:Hide();
-		SetCursor("Interface\\ICONS\\" .. ((self.class and self.class.BA.IC) or "inv_misc_questionmark")) ;
+		SetCursor(resolveIcon((self.class and self.class.BA.IC) or "inv_misc_questionmark")) ;
 		if self.additionalOnDragHandler then
 			self.additionalOnDragHandler(self);
 		end
@@ -652,7 +653,7 @@ end
 
 local function decorateContainer(containerFrame, class, container)
 	local icon, name = getBaseClassDataSafe(class);
-	Utils.texture.applyRoundTexture(containerFrame.Icon, "Interface\\ICONS\\" .. icon, "Interface\\ICONS\\TEMP");
+	Utils.texture.applyRoundTexture(containerFrame.Icon, resolveIcon(icon), "Interface\\ICONS\\TEMP");
 	containerFrame.Title:SetText(name);
 end
 TRP3_API.inventory.decorateContainer = decorateContainer;
@@ -864,7 +865,7 @@ local function presentLoot(loot, onLootCallback, forceLoot, checker, onDiscardCa
 		return;
 	end
 	if loot then
-		Utils.texture.applyRoundTexture(lootFrame.Icon, "Interface\\ICONS\\" .. (loot.BA.IC or "Garrison_silverchest"), "Interface\\ICONS\\TEMP");
+		Utils.texture.applyRoundTexture(lootFrame.Icon, resolveIcon(loot.BA.IC or "Garrison_silverchest"), "Interface\\ICONS\\TEMP");
 		lootFrame.Title:SetText((loot.BA.NA or loc("LOOT")));
 
 		local slotCounter = 1;
