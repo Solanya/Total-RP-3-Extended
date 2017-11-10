@@ -24,6 +24,7 @@ local getItemLink = TRP3_API.inventory.getItemLink;
 local loc = TRP3_API.locale.getText;
 local EMPTY = TRP3_API.globals.empty;
 local tcopy = Utils.table.copy;
+local tconcat = table.concat;
 
 --*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 -- INVENTORY MANAGEMENT API
@@ -546,4 +547,17 @@ function TRP3_API.inventory.onStart()
 	BINDING_NAME_TRP3_INVENTORY = loc("BINDING_NAME_TRP3_INVENTORY");
 	BINDING_NAME_TRP3_MAIN_CONTAINER = loc("BINDING_NAME_TRP3_MAIN_CONTAINER");
 	BINDING_NAME_TRP3_SEARCH_FOR_ITEMS = loc("BINDING_NAME_TRP3_SEARCH_FOR_ITEMS");
+
+	TRP3_API.slash.registerCommand({
+		id = "use_item",
+		helpLine = " " .. loc("IT_MACRO_USE_ITEM"),
+		handler = function(...)
+			local itemName = tconcat({...}, " ");
+			if itemName then
+				-- TODO Go through all items in the user inventory to find the first one with that name
+			else
+				Utils.message.displayMessage(loc("IT_MACRO_USE_ITEM_USAGE"));
+			end
+		end
+	});
 end
