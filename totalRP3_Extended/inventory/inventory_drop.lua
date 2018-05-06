@@ -19,19 +19,22 @@ local Globals, Events, Utils = TRP3_API.globals, TRP3_API.events, TRP3_API.utils
 local EMPTY = Globals.empty;
 local Comm = TRP3_API.communication;
 local type, tremove = type, tremove;
-local tinsert, assert, strtrim, tostring, wipe, pairs, sqrt, tonumber = tinsert, assert, strtrim, tostring, wipe, pairs, sqrt, tonumber;
+local tinsert, assert, strtrim, tostring, wipe, pairs, sqrt, tonumber, _G = tinsert, assert, strtrim, tostring, wipe, pairs, sqrt, tonumber, _G;
 local getClass, isContainerByClassID, isUsableByClass = TRP3_API.extended.getClass, TRP3_API.inventory.isContainerByClassID, TRP3_API.inventory.isUsableByClass;
 local SetMapToCurrentZone, GetCurrentMapAreaID, GetPlayerMapPosition = SetMapToCurrentZone, GetCurrentMapAreaID, GetPlayerMapPosition;
 local loc = TRP3_API.loc;
 local getItemLink = TRP3_API.inventory.getItemLink;
 local setTooltipForSameFrame = TRP3_API.ui.tooltip.setTooltipForSameFrame;
 local broadcast = TRP3_API.communication.broadcast;
+local displayDropDown = TRP3_API.ui.listbox.displayDropDown;
 
 local dropFrame, stashEditFrame, stashFoundFrame = TRP3_DropSearchFrame, TRP3_StashEditFrame, TRP3_StashFoundFrame;
 local callForStashRefresh;
 local dropData, stashesData;
 
 local UnitPosition = TRP3_API.extended.getUnitPositionSafe;
+
+local MARKER_NAME_PREFIX = "TRP3_WordMapMarker";
 
 --*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 -- Drop
@@ -94,6 +97,69 @@ end
 -- Scan
 --*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
+-- TEMP Ellypse will be smarter than me about this
+
+local iconHandler = function(icon)
+	stashEditFrame.icon.Icon:SetTexture("Interface\\ICONS\\" .. icon);
+	stashEditFrame.icon.selectedIcon = icon;
+end
+
+local function openStashEditor(stashIndex)
+	stashEditFrame.stashIndex = stashIndex;
+	if stashIndex then
+		stashEditFrame.title:SetText(loc.DR_STASHES_EDIT);
+		local stash = stashesData[stashIndex] or EMPTY;
+		stashEditFrame.name:SetText(stash.BA and stash.BA.NA or loc.DR_STASHES_NAME);
+		iconHandler(stash.BA and stash.BA.IC or "temp");
+		stashEditFrame.hidden:SetChecked(stash.BA.NS or false);
+	else
+		stashEditFrame.title:SetText(loc.DR_STASHES_CREATE);
+		stashEditFrame.name:SetText(loc.DR_STASHES_NAME);
+		iconHandler("temp");
+		stashEditFrame.hidden:SetChecked(false);
+	end
+	stashEditFrame:Show();
+end
+
+local function mapMarkersDropDownSelection(selection)
+	local type, index = strsplit("_", selection);
+	index = tonumber(index);
+
+	if index then
+		if type == "edit" then
+			stashEditFrame.noShow = true;
+			openStashEditor(index)
+		elseif type == "delete" then
+			TRP3_API.popup.showConfirmPopup(loc.DR_STASHES_REMOVE_PP, function()
+				if index then
+					wipe(stashesData[index]);
+					tremove(stashesData, index);
+					Utils.message.displayMessage(loc.DR_STASHES_REMOVED, 1);
+				end
+			end);
+		end
+	end
+end
+
+local function mapMarkersDropDown()
+	local values = {};
+	local markerToAttach;
+
+	-- Iterate over the blips in a first pass to build a list of all the
+	-- ones we're mousing over.
+	local index = 1;
+	while(_G[MARKER_NAME_PREFIX .. index]) do
+		local marker = _G[MARKER_NAME_PREFIX .. index];
+		if marker:IsVisible() and marker:IsMouseOver() and marker.dropdownLine then
+			tinsert(values, marker.dropdownLine);
+			markerToAttach = marker;
+		end
+		index = index + 1;
+	end
+
+	displayDropDown(markerToAttach, values, mapMarkersDropDownSelection, 0, true);
+end
+
 local function initScans()
 	TRP3_API.map.registerScan({
 		id = "inv_scan_self",
@@ -146,7 +212,16 @@ local function initScans()
 			end
 			local line = Utils.str.icon(stash.BA.IC) .. " " .. getItemLink(stash);
 			marker.scanLine = line .. " - |cffff9900" .. total .. "/8";
-			marker.Icon:SetTexCoord(0.250, 0.375, 0.625, 0.750);
+			marker.dropdownLine = {line, {{"edit", "edit_" .. index} ,{"delete", "delete_" .. index}}};
+			marker.iconAtlas = "VignetteLoot";
+			-- Plan : Create a dropdown knowing what to do, then call that dropdown when right-clicking.
+			-- For each stash under the cursor, add a line to the dropdown that can be hovered for two option : edit, and delete.
+			-- I have no idea how to do that lol, gonna have fun with that but at least i'll know for making maps later.
+			marker:SetScript("OnMouseDown", function(self, button)
+				if button == "RightButton" then
+					mapMarkersDropDown();
+				end
+			end);
 		end,
 		noAnim = true,
 	});
@@ -190,7 +265,7 @@ local function initScans()
 		scanMarkerDecorator = function(index, entry, marker)
 			local line = Utils.str.icon(entry.BA.IC) .. " " .. getItemLink(entry);
 			marker.scanLine = line .. " - |cffff9900" .. entry.total .. "/8 |cff00ff00- " .. entry.sender;
-			marker.Icon:SetTexCoord(0.250, 0.375, 0.625, 0.750);
+			marker.iconAtlas = "VignetteLoot";
 		end,
 		scanDuration = 2.5;
 	});
@@ -282,29 +357,7 @@ local showStash;
 local stashContainer;
 local createRefreshOnFrame = TRP3_API.ui.frame.createRefreshOnFrame;
 
-local iconHandler = function(icon)
-	stashEditFrame.icon.Icon:SetTexture("Interface\\ICONS\\" .. icon);
-	stashEditFrame.icon.selectedIcon = icon;
-end
-
-local function openStashEditor(stashIndex)
-	stashEditFrame.stashIndex = stashIndex;
-	if stashIndex then
-		stashEditFrame.title:SetText(loc.DR_STASHES_EDIT);
-		local stash = stashesData[stashIndex] or EMPTY;
-		stashEditFrame.name:SetText(stash.BA and stash.BA.NA or loc.DR_STASHES_NAME);
-		iconHandler(stash.BA and stash.BA.IC or "temp");
-		stashEditFrame.hidden:SetChecked(stash.BA.NS or false);
-	else
-		stashEditFrame.title:SetText(loc.DR_STASHES_CREATE);
-		stashEditFrame.name:SetText(loc.DR_STASHES_NAME);
-		iconHandler("temp");
-		stashEditFrame.hidden:SetChecked(false);
-	end
-	stashEditFrame:Show();
-end
-
-local function saveStash()
+local function saveStash(noShow)
 	local stash;
 	local index = stashEditFrame.stashIndex;
 	if index then
@@ -327,19 +380,26 @@ local function saveStash()
 	SetMapToCurrentZone();
 	local mapID, mapX, mapY = TRP3_API.map.getCurrentCoordinates("player");
 
-	if posX and posY then
-		stash.posX = posX;
-		stash.posY = posY;
-		stash.posZ = posZ;
-		stash.mapID = mapID;
-		stash.mapX = mapX;
-		stash.mapY = mapY;
+	if noShow == true then
 		stash.id = Utils.str.id();
+
+		stashEditFrame:Hide();
+	else
+		if posX and posY then
+			stash.posX = posX;
+			stash.posY = posY;
+			stash.posZ = posZ;
+			stash.mapID = mapID;
+			stash.mapX = mapX;
+			stash.mapY = mapY;
+			stash.id = Utils.str.id();
+		end
+
+		stashEditFrame:Hide();
+
+		showStash(stash, index);
+
 	end
-
-	stashEditFrame:Hide();
-
-	showStash(stash, index);
 end
 
 function showStash(stashInfo, stashIndex, sharedData)
@@ -419,6 +479,7 @@ local function initStashContainer()
 				{ loc.DR_STASHES_REMOVE, 2 }
 			}, function(value)
 				if value == 1 then
+					stashEditFrame.noShow = false;
 					openStashEditor(stashContainer.stashIndex);
 					stashContainer:Hide();
 				else
@@ -830,6 +891,7 @@ local function onDropButtonAction(actionID)
 	if actionID == ACTION_SEARCH_MY then
 		searchForItems();
 	elseif actionID == ACTION_STASH_CREATE then
+		stashEditFrame.noShow = false;
 		openStashEditor(nil);
 	elseif actionID == ACTION_STASH_SEARCH then
 		startStashesRequest();
@@ -985,14 +1047,14 @@ function dropFrame.init()
 	stashEditFrame.cancel:SetText(CANCEL);
 	stashEditFrame.cancel:SetScript("OnClick", function() stashEditFrame:Hide() end);
 	stashEditFrame.ok:SetText(SAVE);
-	stashEditFrame.ok:SetScript("OnClick", function() saveStash() end);
+	stashEditFrame.ok:SetScript("OnClick", function() saveStash(stashEditFrame.noShow) end);
 
 	stashEditFrame.name.title:SetText(loc.DR_STASHES_NAME .. " (" .. loc.DR_STASHES_MAX .. ")");
 	setTooltipForSameFrame(stashEditFrame.icon, "RIGHT", 0, 5, loc.EDITOR_ICON);
 	stashEditFrame.icon:SetScript("OnClick", function()
 		TRP3_API.popup.showPopup(TRP3_API.popup.ICONS,
-			{ parent = stashEditFrame.icon, point = "LEFT", parentPoint = "RIGHT", x = 15 },
-			{ iconHandler });
+		{ parent = stashEditFrame.icon, point = "LEFT", parentPoint = "RIGHT", x = 15 },
+		{ iconHandler });
 	end);
 	stashEditFrame.hidden.Text:SetText(loc.DR_STASHES_HIDE);
 	setTooltipForSameFrame(stashEditFrame.hidden, "RIGHT", 0, 5, loc.DR_STASHES_HIDE, loc.DR_STASHES_HIDE_TT);
