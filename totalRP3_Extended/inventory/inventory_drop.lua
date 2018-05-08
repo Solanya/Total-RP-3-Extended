@@ -131,11 +131,10 @@ local function mapMarkersDropDownSelection(selection)
 			openStashEditor(index)
 		elseif type == "delete" then
 			TRP3_API.popup.showConfirmPopup(loc.DR_STASHES_REMOVE_PP, function()
-				if index then
-					wipe(stashesData[index]);
-					tremove(stashesData, index);
-					Utils.message.displayMessage(loc.DR_STASHES_REMOVED, 1);
-				end
+				wipe(stashesData[index]);
+				tremove(stashesData, index);
+				Utils.message.displayMessage(loc.DR_STASHES_REMOVED, 1);
+				TRP3_API.map.launchScan("stashes_scan_self");	-- TODO : Remove this atrocity and hide the deleted marker properly
 			end);
 		end
 	end
@@ -150,14 +149,16 @@ local function mapMarkersDropDown()
 	local index = 1;
 	while(_G[MARKER_NAME_PREFIX .. index]) do
 		local marker = _G[MARKER_NAME_PREFIX .. index];
-		if marker:IsVisible() and marker:IsMouseOver() and marker.dropdownLine then
+		if marker:IsVisible() and marker:IsMouseOver() and marker.dropdownLine and marker.iconAtlas == "VignetteLoot" then
 			tinsert(values, marker.dropdownLine);
 			markerToAttach = marker;
 		end
 		index = index + 1;
 	end
 
-	displayDropDown(markerToAttach, values, mapMarkersDropDownSelection, 0, true);
+	if markerToAttach then
+		displayDropDown(markerToAttach, values, mapMarkersDropDownSelection, 0, true);
+	end
 end
 
 local function initScans()
@@ -212,11 +213,10 @@ local function initScans()
 			end
 			local line = Utils.str.icon(stash.BA.IC) .. " " .. getItemLink(stash);
 			marker.scanLine = line .. " - |cffff9900" .. total .. "/8";
-			marker.dropdownLine = {line, {{"edit", "edit_" .. index} ,{"delete", "delete_" .. index}}};
+			marker.dropdownLine = {line, {{loc.DR_STASHES_EDIT, "edit_" .. index} ,{loc.DR_STASHES_REMOVE, "delete_" .. index}}};
 			marker.iconAtlas = "VignetteLoot";
-			-- Plan : Create a dropdown knowing what to do, then call that dropdown when right-clicking.
-			-- For each stash under the cursor, add a line to the dropdown that can be hovered for two option : edit, and delete.
-			-- I have no idea how to do that lol, gonna have fun with that but at least i'll know for making maps later.
+
+
 			marker:SetScript("OnMouseDown", function(self, button)
 				if button == "RightButton" then
 					mapMarkersDropDown();
@@ -265,6 +265,7 @@ local function initScans()
 		scanMarkerDecorator = function(index, entry, marker)
 			local line = Utils.str.icon(entry.BA.IC) .. " " .. getItemLink(entry);
 			marker.scanLine = line .. " - |cffff9900" .. entry.total .. "/8 |cff00ff00- " .. entry.sender;
+			marker.dropdownLine = nil;
 			marker.iconAtlas = "VignetteLoot";
 		end,
 		scanDuration = 2.5;
@@ -382,7 +383,7 @@ local function saveStash(noShow)
 
 	if noShow == true then
 		stash.id = Utils.str.id();
-
+		TRP3_API.map.launchScan("stashes_scan_self");	-- TODO : Remove this atrocity and update the edited marker properly
 		stashEditFrame:Hide();
 	else
 		if posX and posY then
